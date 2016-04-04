@@ -30,6 +30,10 @@
 # include defines, and compiler settings for the given architecture
 # version.
 #
+
+# ArchiDroid
+include $(BUILD_SYSTEM)/archidroid.mk
+
 ifeq ($(strip $(TARGET_ARCH_VARIANT)),)
 TARGET_ARCH_VARIANT := armv8
 endif
@@ -67,8 +71,7 @@ TARGET_STRIP := $(TARGET_TOOLS_PREFIX)strip$(HOST_EXECUTABLE_SUFFIX)
 
 TARGET_NO_UNDEFINED_LDFLAGS := -Wl,--no-undefined
 
-TARGET_GLOBAL_CFLAGS += \
-    -fno-strict-aliasing \
+android_config_h := $(call select-android-config-h,linux-arm64)
 
 android_config_h := $(call select-android-config-h,linux-arm64)
 
@@ -114,6 +117,7 @@ TARGET_GLOBAL_LDFLAGS += \
 			-Wl,--fatal-warnings \
 			-Wl,-maarch64linux \
 			-Wl,--hash-style=gnu \
+                        -Wl,-Bsymbolic \
 			-Wl,--fix-cortex-a53-843419 \
 			$(arch_variant_ldflags)
 
@@ -125,11 +129,16 @@ TARGET_GLOBAL_CPPFLAGS += -fvisibility-inlines-hidden
 # More flags/options can be added here
 TARGET_RELEASE_CFLAGS := \
 			-DNDEBUG \
-			-O2 -g \
+                        $(ARCHIDROID_GCC_CFLAGS_OPTI) \
 			-Wstrict-aliasing=2 \
 			-fgcse-after-reload \
 			-frerun-cse-after-loop \
 			-frename-registers
+
+TARGET_GLOBAL_CFLAGS += $(ARCHIDROID_GCC_CFLAGS)
+TARGET_GLOBAL_CFLAGS += $(ARCHIDROID_GCC_CFLAGS_64)
+TARGET_GLOBAL_CPPFLAGS += $(ARCHIDROID_GCC_CPPFLAGS)
+TARGET_GLOBAL_LDFLAGS += $(ARCHIDROID_GCC_LDFLAGS)
 
 libc_root := bionic/libc
 libm_root := bionic/libm
