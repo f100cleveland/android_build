@@ -12,6 +12,9 @@ ifneq ($(BUILD_WITH_COLORS),0)
   CL_RST="\033[0m"
 endif
 
+# ArchiDroid
+include $(BUILD_SYSTEM)/archidroid.mk
+
 # HACK: clear LOCAL_PATH from including last build target before calling
 # intermedites-dir-for
 LOCAL_PATH := $(BUILD_SYSTEM)
