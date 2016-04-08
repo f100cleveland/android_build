@@ -71,11 +71,11 @@ function check_product()
     fi
 
     if (echo -n $1 | grep -q -e "^twisted_") ; then
-       CUSTOM_BUILD=$(echo -n $1 | sed -e 's/^twisted_//g')
+       TWISTED_BUILD=$(echo -n $1 | sed -e 's/^twisted_//g')
     else
-       CUSTOM_BUILD=
+       TWISTED_BUILD=
     fi
-    export CUSTOM_BUILD
+    export TWISTED_BUILD
 
         TARGET_PRODUCT=$1 \
         TARGET_BUILD_VARIANT= \
@@ -207,6 +207,7 @@ function setpaths()
     fi
 
     export PATH=$ANDROID_BUILD_PATHS$PATH
+    export PYTHONPATH=$T/system/core:$PYTHONPATH
 
     unset ANDROID_JAVA_TOOLCHAIN
     unset ANDROID_PRE_BUILD_PATHS
@@ -527,7 +528,7 @@ function breakfast()
     local variant=$2
     CUSTOM_DEVICES_ONLY="true"
     unset LUNCH_MENU_CHOICES
-    for f in `/bin/ls vendor/nexus/vendorsetup.sh 2> /dev/null`
+    for f in `/bin/ls vendor/twisted/vendorsetup.sh 2> /dev/null`
         do
             echo "including $f"
             . $f
@@ -547,7 +548,7 @@ function breakfast()
             if [ -z "$variant" ]; then
                 variant="userdebug"
             fi
-            lunch nexus_$target-$variant
+            lunch twisted_$target-$variant
         fi
     fi
     return $?
@@ -1468,6 +1469,7 @@ function godir () {
     \cd $T/$pathname
 }
 
+# Make using all available CPUs
 function mka() {
     case `uname -s` in
         Darwin)
