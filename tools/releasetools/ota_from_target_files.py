@@ -134,10 +134,10 @@ OPTIONS.updater_binary = None
 OPTIONS.oem_source = None
 OPTIONS.fallback_to_full = True
 OPTIONS.full_radio = False
+OPTIONS.backuptool = True
 OPTIONS.full_bootloader = False
 # Stash size cannot exceed cache_size * threshold.
 OPTIONS.cache_size = None
-OPTIONS.backuptool = False
 OPTIONS.stash_threshold = 0.8
 
 def MostPopularKey(d, default):
@@ -599,9 +599,6 @@ else if get_stage("%(bcb_dev)s") == "3/3" then
   # Dump fingerprints
   #script.Print("Target: %s" % CalculateFingerprint(
   #    oem_props, oem_dict, OPTIONS.info_dict))
-  script.Print("********************")
-  script.Print("**    Twisted     **")
-  script.Print("********************")
 
   script.AppendExtra("ifelse(is_mounted(\"/system\"), unmount(\"/system\"));")
   device_specific.FullOTA_InstallBegin()
@@ -611,7 +608,24 @@ else if get_stage("%(bcb_dev)s") == "3/3" then
   script.SetPermissionsRecursive("/tmp/install", 0, 0, 0755, 0644, None, None)
   script.SetPermissionsRecursive("/tmp/install/bin", 0, 0, 0755, 0755, None, None)
 
+  script.Print("                                                  ")
+  script.Print("_________       __          __             ._")
+  script.Print("\__  __ /  _  _|__| _______/  |_  ____   __| |  ") 
+  script.Print("  |  | \ \/ \/ /  |/  ___/\   __\/ __ \ / __ |  ") 
+  script.Print("  |  |  \     /|  |\___ \  |  | \  ___// /_/ |  ")
+  script.Print("  |__|   \/\_/ |__/______> |__|  \_____>_____|  ")
+  script.Print("*********************************************************")
+  script.Print("---------------TWISTED ANDROID PROJECT-------------------")
+  script.Print(" * aow1980 * BrandenM * freak_97 * hellsgod * letmedanz *")
+  script.Print("*********************************************************")
+  script.Print("Running backup scripts and setting permissions...")
+
   if OPTIONS.backuptool:
+    if block_based:
+      common.ZipWriteStr(output_zip, "system/bin/backuptool.sh",
+                     ""+input_zip.read("SYSTEM/bin/backuptool.sh"))
+      common.ZipWriteStr(output_zip, "system/bin/backuptool.functions",
+                     ""+input_zip.read("SYSTEM/bin/backuptool.functions"))
     script.Mount("/system")
     script.RunBackup("backup")
     script.Unmount("/system")
@@ -641,8 +655,11 @@ else if get_stage("%(bcb_dev)s") == "3/3" then
     system_diff = common.BlockDifference("system", system_tgt, src=None)
     system_diff.WriteScript(script, output_zip)
   else:
+    script.script.append('unmount("/system");')
+    script.script.append('unmount("/data");')
     script.FormatPartition("/system")
     script.Mount("/system", recovery_mount_options)
+    script.Mount("/data")
     if not has_recovery_patch:
       script.UnpackPackageDir("recovery", "/system")
     script.UnpackPackageDir("system", "/system")
