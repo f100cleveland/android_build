@@ -92,6 +92,8 @@ CLANG_CONFIG_UNKNOWN_CFLAGS := \
   -Wno-error=maybe-uninitialized \
   -Wno-error=unused-but-set-parameter \
   -Wno-error=unused-but-set-variable \
+  -Wno-error=shift-negative-value \
+  -Wno-error=nonnull-compare \
   -Wno-free-nonheap-object \
   -Wno-literal-suffix \
   -Wno-maybe-uninitialized \
