@@ -1588,7 +1588,7 @@ $(INTERNAL_OTA_PACKAGE_TARGET): KEY_CERT_PAIR := $(DEFAULT_KEY_CERT_PAIR)
 
 BOOT_ZIP_FROM_IMAGE_SCRIPT := ./build/tools/releasetools/boot_flash_from_image
 KERNEL_PATH := $(TARGET_KERNEL_SOURCE)/arch/arm/configs/$(TARGET_KERNEL_CONFIG)
-#BOOT_ZIP_OUT_FILE := Twisted-Kernel-$(DEVICE).zip
+#BOOT_ZIP_OUT_FILE := Twisted-Kernel-$(DEVICE)-$(shell date +"%Y%m%d-%H%M").zip
 
 ifneq ($(TWISTED_BUILD),)
     $(INTERNAL_OTA_PACKAGE_TARGET): backuptool := true
@@ -1607,7 +1607,7 @@ $(INTERNAL_OTA_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE) $(DISTTOOLS)
 	   $(if $(OEM_OTA_CONFIG), -o $(OEM_OTA_CONFIG)) \
 	   $(BUILT_TARGET_FILES_PACKAGE) $@
 
-CUSTOM_TARGET_PACKAGE := $(PRODUCT_OUT)/$(TWISTED_VERSION)-$(shell date +%Y%m%d).zip
+CUSTOM_TARGET_PACKAGE := $(PRODUCT_OUT)/$(TWISTED_VERSION)-$(shell date +"%Y%m%d-%H%M").zip
 
 .PHONY: otapackage bacon bootzip
 otapackage: $(INTERNAL_OTA_PACKAGE_TARGET)
