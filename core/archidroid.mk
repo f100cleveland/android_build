@@ -39,7 +39,7 @@ ARCHIDROID_GCC_LDFLAGS := -Wl,-O3 -Wl,--as-needed -Wl,--gc-sections -Wl,--relax 
 # Flags below are applied to specific targets only, use them if your flag is not compatible for both compilers
 
 # We use GCC 4.9 for arm-linux-androideabi, so we don't have any extra flags for it
-ARCHIDROID_GCC_CFLAGS_32 := -mtune=cortex-a15
+ARCHIDROID_GCC_CFLAGS_32 := -mcpu=cortex-a15 -mtune=cortex-a15
 
 # We use GCC 4.9 for aarch64-linux-android, so we don't have any extra flags for it
 ifeq (arm,$(TARGET_ARCH))
