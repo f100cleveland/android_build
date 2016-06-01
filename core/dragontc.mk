@@ -12,62 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Set Bluetooth Modules
-BLUETOOTH := libbluetooth_jni bluetooth.mapsapi bluetooth.default bluetooth.mapsapi libbt-brcm_stack audio.a2dp.default libbt-brcm_gki libbt-utils libbt-qcom_sbc_decoder libbt-brcm_bta libbt-brcm_stack libbt-vendor libbtprofile libbtdevice libbtcore bdt bdtest libbt-hci libosi ositests libbluetooth_jni net_test_osi net_test_device net_test_btcore net_bdtool net_hci bdAddrLoader
-
-#######################
-##  D R A G O N T C  ##
-#######################
-
-# Disable modules that don't work with DragonTC. Split up by arch.
-DISABLE_DTC_arm :=
-DISABLE_DTC_arm64 :=
-
-# Set DISABLE_DTC based on arch
-DISABLE_DTC := \
-  $(DISABLE_DTC_$(TARGET_ARCH)) \
-  $(LOCAL_DISABLE_DTC)
-
-# Enable DragonTC on GCC modules. Split up by arch.
-ENABLE_DTC_arm :=
-ENABLE_DTC_arm64 :=
-
-# Set ENABLE_DTC based on arch
-ENABLE_DTC := \
-  $(ENABLE_DTC_$(TARGET_ARCH)) \
-  $(LOCAL_ENABLE_DTC)
-
-# Enable DragonTC on current module if requested.
-ifeq (1,$(words $(filter $(ENABLE_DTC),$(LOCAL_MODULE))))
-  my_cc := $(CLANG)
-  my_cxx := $(CLANG_CXX)
-  my_clang := true
-endif
-
-# Disable DragonTC on current module if requested.
-ifeq ($(my_clang),true)
-  ifeq (1,$(words $(filter $(DISABLE_DTC),$(LOCAL_MODULE))))
-    my_cc := $(AOSP_CLANG)
-    my_cxx := $(AOSP_CLANG_CXX)
-    ifeq ($(HOST_OS),darwin)
-      # Darwin is really bad at dealing with idiv/sdiv. Don't use krait on Darwin.
-      CLANG_CONFIG_arm_EXTRA_CFLAGS += -mcpu=cortex-a9
-    else
-      CLANG_CONFIG_arm_EXTRA_CFLAGS += -mcpu=krait
-    endif
-  else
-    CLANG_CONFIG_arm_EXTRA_CFLAGS += -mcpu=krait2
-  endif
-endif
-
-
-#################
-##  P O L L Y  ##
-#################
-
 # Polly flags for use with Clang
-POLLY := -O3 -mllvm -polly \
+POLLY := -mllvm -polly \
   -mllvm -polly-parallel \
+  -mllvm -polly-parallel-force \
   -mllvm -polly-ast-use-context \
   -mllvm -polly-vectorizer=polly \
   -mllvm -polly-opt-fusion=max \
@@ -83,32 +31,52 @@ ifeq (1,$(words $(filter 3.8 3.9,$(LLVM_PREBUILTS_VERSION))))
   POLLY += -mllvm -polly-position=after-loopopt \
     -mllvm -polly-run-inliner \
     -mllvm -polly-detect-keep-going \
-    -mllvm -polly-rtc-max-arrays-per-group=40
+    -mllvm -polly-rtc-max-arrays-per-group=40 \
+    -mllvm -polly-register-tiling
+else
+  POLLY += -mllvm -polly-no-early-exit
 endif
+
+# Disable modules that don't work with DragonTC. Split up by arch.
+DISABLE_DTC_arm := libm libblasV8 libperfprofdcore libperfprofdutils perfprofd libjavacrypto libscrypt_static
+DISABLE_DTC_arm64 := libm libblasV8 libperfprofdcore libperfprofdutils perfprofd libjavacrypto libscrypt_static
+
+# Set DISABLE_DTC based on arch
+DISABLE_DTC := \
+  $(DISABLE_DTC_$(TARGET_ARCH)) \
+  $(LOCAL_DISABLE_DTC)
+
+# Enable DragonTC on GCC modules. Split up by arch.
+ENABLE_DTC_arm :=
+ENABLE_DTC_arm64 :=
+
+# Set ENABLE_DTC based on arch
+ENABLE_DTC := \
+  $(ENABLE_DTC_$(TARGET_ARCH)) \
+  $(LOCAL_ENABLE_DTC)
 
 # Disable modules that dont work with Polly. Split up by arch.
 DISABLE_POLLY_arm := \
-  libpng \
+  libblas \
+  libF77blas \
+  libF77blasV8 \
+  libjni_latinime_common_static \
   libLLVMCodeGen \
   libLLVMARMCodeGen\
   libLLVMScalarOpts \
   libLLVMSupport \
   libLLVMMC \
-  libLLVMMCParser \
+  libmedia \
   libminui \
   libgui \
-  libF77blas \
-  libF77blasAOSP \
+  libpng \
+  libprotobuf-cpp-lite \
   libRSCpuRef \
-  libRS \
-  libjni_latinime_common_static \
-  libmedia \
-  libRSDriver \
-  libxml2 \
-  libc_freebsd \
-  libc_tzcode \
-  libv8
+  libRS	\
+  libRSDrive
+
 DISABLE_POLLY_arm64 := \
+  libbccSupport \
   libpng \
   libfuse \
   libLLVMAsmParser \
@@ -119,10 +87,6 @@ DISABLE_POLLY_arm64 := \
   libLLVMSupport \
   libLLVMSelectionDAG \
   libLLVMTransformUtils \
-  libF77blas \
-  libbccSupport \
-  libblas \
-  libRS \
   libstagefright_mpeg2ts \
   bcc_strip_attr
 
@@ -162,24 +126,41 @@ endif
 DISABLE_POLLY := \
   $(DISABLE_POLLY_$(TARGET_ARCH)) \
   $(DISABLE_DTC) \
-  $(BLUETOOTH) \
   $(LOCAL_DISABLE_POLLY)
 
-# Set POLLY based on DISABLE_POLLy
-ifeq (1,$(words $(filter $(DISABLE_POLLY),$(LOCAL_MODULE))))
-  POLLY := -Os
+# Enable DragonTC on current module if requested.
+ifeq (1,$(words $(filter $(ENABLE_DTC),$(LOCAL_MODULE))))
+  my_cc := $(CLANG)
+  my_cxx := $(CLANG_CXX)
+  my_clang := true
 endif
 
 ifeq ($(my_clang),true)
+  # Disable DragonTC on current module if requested.
+  ifeq (1,$(words $(filter $(DISABLE_DTC),$(LOCAL_MODULE))))
+    my_cc := $(AOSP_CLANG)
+    my_cxx := $(AOSP_CLANG_CXX)
+    ifeq ($(HOST_OS),darwin)
+      # Darwin is really bad at dealing with idiv/sdiv. Don't use krait on Darwin.
+      CLANG_CONFIG_arm_EXTRA_CFLAGS += -mcpu=cortex-a9
+    else
+      CLANG_CONFIG_arm_EXTRA_CFLAGS += -mcpu=krait
+    endif
+  else
+    CLANG_CONFIG_arm_EXTRA_CFLAGS += -mcpu=krait2
+  endif
+  # Host modules are not optimized to improve compile time.
   ifndef LOCAL_IS_HOST_MODULE
-    # Possible conflicting flags will be filtered out to reduce argument
-    # size and to prevent issues with locally set optimizations.
-    my_cflags := $(filter-out -Wall -Werror -g -O3 -O2 -Os -O1 -O0 -Og -Oz -Wextra -Weverything,$(my_cflags))
-    # Enable -O3 and Polly if not blacklisted, otherwise use -Os.
-    my_cflags += $(POLLY) -Qunused-arguments -Wno-unknown-warning-option -w
+    # Filter flags to reduce conflicts and commandline argument size
+    my_cflags :=  $(filter-out -Wall -Werror -g -O3 -O2 -Os -O1 -O0 -Og -Oz,$(my_cflags))
+    # Enable -O3 and Polly if not blacklisted, otherwise use -O3.
+    ifneq (1,$(words $(filter $(DISABLE_POLLY),$(LOCAL_MODULE))))
+      my_cflags += -O3 $(POLLY)
+    else
+      my_cflags += -O3
+    endif
   endif
 endif
-
 
 #############
 ##  L T O  ##
@@ -187,10 +168,9 @@ endif
 
 # Disable modules that don't work with Link Time Optimizations. Split up by arch.
 DISABLE_LTO_arm := libLLVMScalarOpts libjni_latinime_common_static libjni_latinime adbd nit libnetd_client libblas
-DISABLE_THINLTO_arm := libart libart-compiler libsigchain
-DISABLE_LTO_arm64 := 
+DISABLE_THINLTO_arm :=
+DISABLE_LTO_arm64 :=  libLLVMScalarOpts libjni_latinime_common_static libjni_latinime adbd nit libnetd_client libblas
 DISABLE_THINLTO_arm64 :=
-
 
 # Set DISABLE_LTO and DISABLE_THINLTO based on arch
 DISABLE_LTO := \
